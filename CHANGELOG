@@ -1,0 +1,15 @@
+
+2.0.0
+---
+* Added support for latest version of Slim
+* Refactored complete caching structure to generate one cached file
+* Removed redundant functions and general code refactoring
+* Made code PSR-2 compliant
+* Added support for route prefixes
+* Removed base controller dependency
+* Added support for multiple routes per controller action
+
+
+1.0.0
+---
+Initial version from JLaso

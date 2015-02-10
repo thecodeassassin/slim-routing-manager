@@ -1,8 +1,8 @@
 {
-    "name": "jlaso/slim-routing-manager",
-    "description": "An approximation to the Symfony's routing system in SlimFramework",
-    "keywords": ["slimframework","router"],
-    "homepage": "http://github.com/jlaso/slim-routing-manager",
+    "name": "leaseweb/slim-routing-manager",
+    "description": "Controller and annotation based routing for the Slim Framework",
+    "keywords": ["slimframework","router","slim","routing","routing manager"],
+    "homepage": "http://www.leaseweblabs.com",
     "license": "MIT",
     "authors": [
         {
@@ -10,14 +10,20 @@
             "email": "wld1373@gmail.com",
             "homepage": "http://www.patricklaso.com",
             "role": "Developer"
+        },
+        {
+            "name": "Stephen Hoogendijk",
+            "email": "stephen@tca0.nl",
+            "homepage": "http://stephen.tca0.nl",
+            "role": "Developer"
         }
     ],
     "autoload": {
-        "psr-0": { "JLaso\\SlimRoutingManager": "" }
+        "psr-0": { "Slim\\Routing": "" }
     },
     "require": {
         "php":              ">=5.3.0",
-        "slim/slim":        "2.2.0"
+        "slim/slim":        "2.5.*"
     },
     "minimum-stability": "dev"
 }
