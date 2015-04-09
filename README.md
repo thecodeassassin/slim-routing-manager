@@ -45,7 +45,7 @@ The following annotations are supported by the routing manager:
 |------------|----------------------------|----------------------------------------------------------------------------|
 | @Route     | The slim-compliant route   | Proving the route to the controller action                                 |
 | @noPrefix  | None                       | Skip the prefix being attached to the route if a route prefix has been set |
-| @Method    | get|post|delete|put|option | The HTTP method used for the route                                         |
+| @Method    | get/post/delete/put/option | The HTTP method used for the route                                         |
 | @Name      | String                     | The name of the route                                                      |
 
 The parameters and everything else related to the function itself does not defer from the official Slim standard.
