@@ -31,6 +31,11 @@ class Manager
     protected $routePrefix;
 
     /**
+     * @var null
+     */
+    protected $appName;
+
+    /**
      * @var
      */
     protected $cacheFileName = 'compiled_routes.php';
@@ -46,7 +51,9 @@ class Manager
 
         // if the directory does not exist, try to create it
         if (!is_dir($cacheDir)) {
-            @mkdir($cacheDir, 0777, true);
+            if(false === @mkdir($cacheDir, 0777, true)){
+                throw new \Exception("Cant create cache directory : $cacheDir");
+            }
         }
 
         $this->cacheDir = $cacheDir;
@@ -58,6 +65,11 @@ class Manager
         // load the controllers
         if (count($controllerDirs)) {
             foreach ($controllerDirs as $controllerPath) {
+
+                if(!file_exists($controllerPath)){
+                    throw new \Exception("Controller directory does not exist : $controllerPath");
+                }
+
                 $controllers = $this->readDirectory($controllerPath);
                 if (count($controllers)) {
                     $this->controllers = $controllers;
@@ -65,6 +77,17 @@ class Manager
             }
         }
     }
+
+    /**
+     * Set the name of the application to generate routes for
+     *
+     * @param null $appName
+     */
+    public function setAppName($appName)
+    {
+        $this->appName = $appName;
+    }
+
 
 
     /**
@@ -147,6 +170,9 @@ class Manager
         $modTimes = var_export($modTimes, true);
 
         $date = date("Y-m-d h:i:s");
+
+        $appName = $this->appName ? "'{$this->appName}'" : "";
+
         $content = <<<EOD
 <?php
 
@@ -157,13 +183,19 @@ class Manager
  * on {$date}
  */
 \$modTimes = {$modTimes};
-\$app = Slim\Slim::getInstance();
+\$app = Slim\Slim::getInstance({$appName});
+if(!\$app){
+    throw new \\Exception("Could not find the application instance {$appName}");
+}
 
 {$content}
 
 EOD;
         $fileName = $this->cacheFile();
-        file_put_contents($fileName, $content);
+
+        if(false === file_put_contents($fileName, $content)){
+            throw new \Exception("Could not write the routes cache into $content");
+        }
 
         return $fileName;
     }
