@@ -31,9 +31,14 @@ class Manager
     protected $routePrefix;
 
     /**
-     * @var null
+     * @var string|null
      */
     protected $appName;
+
+    /**
+     * @var string|null
+     */
+    protected $defaultNamespace;
 
     /**
      * @var
@@ -87,6 +92,16 @@ class Manager
     {
         $this->appName = $appName;
     }
+
+    /**
+     * Set the namespace to use for controller classes. Mays be override by the annotation @package
+     * @param string $defaultNamespace
+     */
+    public function setDefaultNamespace($defaultNamespace)
+    {
+        $this->defaultNamespace = $defaultNamespace;
+    }
+
 
 
 
@@ -213,19 +228,50 @@ EOD;
 
         preg_match_all('/class\s+(\w*)\s*(extends\s+)?([^{])*/s', $content, $mclass, PREG_SET_ORDER);
         $className = $mclass[0][1];
+
+
+
+        preg_match_all('|(/\*\*[^{]*?{)|', $content, $match, PREG_PATTERN_ORDER);
+
+        $package = null;
+
+        // Search if there is a package name
+        foreach ($match[0] as $k => $m) {
+
+            preg_match_all('/(\/\*\*.*\*\/)/s', $m, $mc, PREG_PATTERN_ORDER);
+            $comments = nl2br($mc[0][0]);
+
+            if (substr_count($m, 'class')) {
+                preg_match_all("/@package\s*([a-zA-Z][a-zA-Z0-9_\\\]*)/s", $comments, $packageAnnotation, PREG_SET_ORDER);
+
+                foreach($packageAnnotation as $p){
+                    $package = $p[1];
+                }
+
+            }
+        }
+
+        // Create class name
+        if(null == $package){
+            $package = $this->defaultNamespace;
+        }
+        if($package){
+            $className = rtrim($package . "\\") . "\\" . $className;
+        }
         if (!$className) {
             throw new \Exception(sprintf('class not found in %s', $classFile));
         }
 
 
-        preg_match_all('|(/\*\*[^{]*?{)|', $content, $match, PREG_PATTERN_ORDER);
-
+        // read methods
         foreach ($match[0] as $k => $m) {
+
+            preg_match_all('/(\/\*\*.*\*\/)/s', $m, $mc, PREG_PATTERN_ORDER);
+            $comments = nl2br($mc[0][0]);
+
             if (!substr_count($m, 'class')) {
-                $function = substr_count($m, 'function') ? 'yes' : 'no';
-                if ($function == 'yes') {
-                    preg_match_all('/(\/\*\*.*\*\/)/s', $m, $mc, PREG_PATTERN_ORDER);
-                    $comments = nl2br($mc[0][0]);
+                $function = substr_count($m, 'function') ? true : false;
+                if ($function) {
                     $noPrefix = strpos($comments, '@noPrefix') !== false;
 
                     preg_match_all('/\*\/\s+(public\s+)?(static\s+)?function\s+([^\(]*)\(/s', $m, $mf, PREG_SET_ORDER);
@@ -252,7 +298,7 @@ EOD;
 
 
                             $result .= sprintf(
-                                '$app->map("%s", "\Lsw\Controller\%s:%s")->via("%s")->name("%s");' . PHP_EOL,
+                                '$app->map("%s", "%s:%s")->via("%s")->name("%s");' . PHP_EOL,
                                 $route,
                                 $className,
                                 $functionName,
@@ -264,6 +310,11 @@ EOD;
                     }
 
                 }
+            }else{
+                preg_match_all("/@package\s*(.*)/s", $comments, $package, PREG_SET_ORDER);
+
+                foreach($package as $p){}
+
             }
         }
 
