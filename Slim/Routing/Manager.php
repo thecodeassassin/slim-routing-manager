@@ -31,6 +31,11 @@ class Manager
     protected $routePrefix;
 
     /**
+     * @var null
+     */
+    protected $appName;
+
+    /**
      * @var
      */
     protected $cacheFileName = 'compiled_routes.php';
@@ -72,6 +77,17 @@ class Manager
             }
         }
     }
+
+    /**
+     * Set the name of the application to generate routes for
+     *
+     * @param null $appName
+     */
+    public function setAppName($appName)
+    {
+        $this->appName = $appName;
+    }
+
 
 
     /**
@@ -154,6 +170,9 @@ class Manager
         $modTimes = var_export($modTimes, true);
 
         $date = date("Y-m-d h:i:s");
+
+        $appName = $this->appName ? "'{$this->appName}'" : "";
+
         $content = <<<EOD
 <?php
 
@@ -164,7 +183,10 @@ class Manager
  * on {$date}
  */
 \$modTimes = {$modTimes};
-\$app = Slim\Slim::getInstance();
+\$app = Slim\Slim::getInstance({$appName});
+if(!\$app){
+    throw new \\Exception("Could not find the application instance {$appName}");
+}
 
 {$content}
 
