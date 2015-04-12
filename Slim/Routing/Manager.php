@@ -46,7 +46,9 @@ class Manager
 
         // if the directory does not exist, try to create it
         if (!is_dir($cacheDir)) {
-            @mkdir($cacheDir, 0777, true);
+            if(false === @mkdir($cacheDir, 0777, true)){
+                throw new \Exception("Cant create cache directory : $cacheDir");
+            }
         }
 
         $this->cacheDir = $cacheDir;
@@ -58,11 +60,11 @@ class Manager
         // load the controllers
         if (count($controllerDirs)) {
             foreach ($controllerDirs as $controllerPath) {
-                
+
                 if(!file_exists($controllerPath)){
                     throw new \Exception("Controller directory does not exist : $controllerPath");
                 }
-                
+
                 $controllers = $this->readDirectory($controllerPath);
                 if (count($controllers)) {
                     $this->controllers = $controllers;
@@ -168,7 +170,10 @@ class Manager
 
 EOD;
         $fileName = $this->cacheFile();
-        file_put_contents($fileName, $content);
+
+        if(false === file_put_contents($fileName, $content)){
+            throw new \Exception("Could not write the routes cache into $content");
+        }
 
         return $fileName;
     }
