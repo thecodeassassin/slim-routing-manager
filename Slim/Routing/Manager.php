@@ -58,6 +58,11 @@ class Manager
         // load the controllers
         if (count($controllerDirs)) {
             foreach ($controllerDirs as $controllerPath) {
+                
+                if(!file_exists($controllerPath)){
+                    throw new \Exception("Controller directory does not exist : $controllerPath");
+                }
+                
                 $controllers = $this->readDirectory($controllerPath);
                 if (count($controllers)) {
                     $this->controllers = $controllers;
