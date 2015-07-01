@@ -31,16 +31,6 @@ class Manager
     protected $routePrefix;
 
     /**
-     * @var string|null
-     */
-    protected $appName;
-
-    /**
-     * @var string|null
-     */
-    protected $defaultNamespace;
-
-    /**
      * @var
      */
     protected $cacheFileName = 'compiled_routes.php';
@@ -56,9 +46,7 @@ class Manager
 
         // if the directory does not exist, try to create it
         if (!is_dir($cacheDir)) {
-            if(false === @mkdir($cacheDir, 0777, true)){
-                throw new \Exception("Cant create cache directory : $cacheDir");
-            }
+            @mkdir($cacheDir, 0777, true);
         }
 
         $this->cacheDir = $cacheDir;
@@ -70,11 +58,6 @@ class Manager
         // load the controllers
         if (count($controllerDirs)) {
             foreach ($controllerDirs as $controllerPath) {
-
-                if(!file_exists($controllerPath)){
-                    throw new \Exception("Controller directory does not exist : $controllerPath");
-                }
-
                 $controllers = $this->readDirectory($controllerPath);
                 if (count($controllers)) {
                     $this->controllers = $controllers;
@@ -82,27 +65,6 @@ class Manager
             }
         }
     }
-
-    /**
-     * Set the name of the application to generate routes for
-     *
-     * @param null $appName
-     */
-    public function setAppName($appName)
-    {
-        $this->appName = $appName;
-    }
-
-    /**
-     * Set the namespace to use for controller classes. Mays be override by the annotation @package
-     * @param string $defaultNamespace
-     */
-    public function setDefaultNamespace($defaultNamespace)
-    {
-        $this->defaultNamespace = $defaultNamespace;
-    }
-
-
 
 
     /**
@@ -185,9 +147,6 @@ class Manager
         $modTimes = var_export($modTimes, true);
 
         $date = date("Y-m-d h:i:s");
-
-        $appName = $this->appName ? "'{$this->appName}'" : "";
-
         $content = <<<EOD
 <?php
 
@@ -198,19 +157,13 @@ class Manager
  * on {$date}
  */
 \$modTimes = {$modTimes};
-\$app = Slim\Slim::getInstance({$appName});
-if(!\$app){
-    throw new \\Exception("Could not find the application instance {$appName}");
-}
+\$app = Slim\Slim::getInstance();
 
 {$content}
 
 EOD;
         $fileName = $this->cacheFile();
-
-        if(false === file_put_contents($fileName, $content)){
-            throw new \Exception("Could not write the routes cache into $content");
-        }
+        file_put_contents($fileName, $content);
 
         return $fileName;
     }
@@ -228,50 +181,19 @@ EOD;
 
         preg_match_all('/class\s+(\w*)\s*(extends\s+)?([^{])*/s', $content, $mclass, PREG_SET_ORDER);
         $className = $mclass[0][1];
-
-
-
-        preg_match_all('|(/\*\*[^{]*?{)|', $content, $match, PREG_PATTERN_ORDER);
-
-        $package = null;
-
-        // Search if there is a package name
-        foreach ($match[0] as $k => $m) {
-
-            preg_match_all('/(\/\*\*.*\*\/)/s', $m, $mc, PREG_PATTERN_ORDER);
-            $comments = nl2br($mc[0][0]);
-
-            if (substr_count($m, 'class')) {
-                preg_match_all("/@package\s*([a-zA-Z][a-zA-Z0-9_\\\]*)/s", $comments, $packageAnnotation, PREG_SET_ORDER);
-
-                foreach($packageAnnotation as $p){
-                    $package = $p[1];
-                }
-
-            }
-        }
-
-        // Create class name
-        if(null == $package){
-            $package = $this->defaultNamespace;
-        }
-        if($package){
-            $className = rtrim($package . "\\") . "\\" . $className;
-        }
         if (!$className) {
             throw new \Exception(sprintf('class not found in %s', $classFile));
         }
 
 
-        // read methods
+        preg_match_all('|(/\*\*[^{]*?{)|', $content, $match, PREG_PATTERN_ORDER);
+
         foreach ($match[0] as $k => $m) {
-
-            preg_match_all('/(\/\*\*.*\*\/)/s', $m, $mc, PREG_PATTERN_ORDER);
-            $comments = nl2br($mc[0][0]);
-
             if (!substr_count($m, 'class')) {
-                $function = substr_count($m, 'function') ? true : false;
-                if ($function) {
+                $function = substr_count($m, 'function') ? 'yes' : 'no';
+                if ($function == 'yes') {
+                    preg_match_all('/(\/\*\*.*\*\/)/s', $m, $mc, PREG_PATTERN_ORDER);
+                    $comments = nl2br($mc[0][0]);
                     $noPrefix = strpos($comments, '@noPrefix') !== false;
 
                     preg_match_all('/\*\/\s+(public\s+)?(static\s+)?function\s+([^\(]*)\(/s', $m, $mf, PREG_SET_ORDER);
@@ -297,24 +219,19 @@ EOD;
                             $name = strtolower($params[0][1]);
 
 
-                            $result .= sprintf(
-                                '$app->map("%s", "%s:%s")->via("%s")->name("%s");' . PHP_EOL,
+                            $result .= str_replace('\\', '\\\\', sprintf(
+                                '$app->map("%s", "\Lsw\Controller\%s:%s")->via("%s")->name("%s");' . PHP_EOL,
                                 $route,
                                 $className,
                                 $functionName,
                                 str_replace(',', '","', $method),
                                 $name
-                            );
+                            ));
                         }
 
                     }
 
                 }
-            }else{
-                preg_match_all("/@package\s*(.*)/s", $comments, $package, PREG_SET_ORDER);
-
-                foreach($package as $p){}
-
             }
         }
 
