@@ -1,5 +1,5 @@
 {
-    "name": "leaseweb/slim-routing-manager",
+    "name": "thecodeassassin/slim-routing-manager",
     "description": "Controller and annotation based routing for the Slim Framework",
     "keywords": ["slimframework","router","slim","routing","routing manager"],
     "homepage": "http://www.leaseweblabs.com",
